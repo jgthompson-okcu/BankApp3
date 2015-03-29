@@ -8,7 +8,7 @@ public class SQLDatabase
 {
     public SQLDatabase()
     {
-	System.out.println("Constructor for SQLDatabase");
+	// System.out.println("Constructor for SQLDatabase");
 	// actually this is just a constructor - we could
 	// comment that print statement out.
     }
