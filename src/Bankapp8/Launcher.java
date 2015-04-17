@@ -11,7 +11,7 @@ package Bankapp8;
 public class Launcher {
     public static void main(String[] args)
     {
-	Bankapp2.main2(args);
+	BankApp8.main2(args);
     }
     
 }
