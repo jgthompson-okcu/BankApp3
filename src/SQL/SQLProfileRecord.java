@@ -129,7 +129,7 @@ public class SQLProfileRecord implements SqlRecordInterface
 	String sEMAIL = results.getString(EMAIL_F);
 	String sADDRESS = results.getString(ADDRESS_F);
 	String sBALANCE = results.getString(BALANCE_F);
-	String sACCESS = results.getString(PHONENUMBER_F);
+	String sACCESS = results.getString(ACCESS_F);
 	String sPHONENUMBER = results.getString(PHONENUMBER_F); 
 	int iACCESS = Integer.parseInt(sACCESS);
 	int iBALANCE = Integer.parseInt(sBALANCE);

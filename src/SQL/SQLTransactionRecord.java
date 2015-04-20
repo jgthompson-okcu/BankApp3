@@ -110,7 +110,7 @@ public class SQLTransactionRecord implements SqlRecordInterface
 	String s = "";
 	for (SQLTransactionRecord rec: records)
 	{
-	    s+= rec+"\n";
+	    s+= rec.toString()+"\n";
 	}
 	return s;
     }
@@ -151,9 +151,9 @@ public class SQLTransactionRecord implements SqlRecordInterface
 			  ID_F +		":%-5d "     // 0 ID
 			+ SENDER_F+		":%-10s "    // 1 SENDER
 			+ RECEIVER_F+		":%-10s "    // 2 RECEIVER
-			+ SENDTIME_F+		":%8s "	     // 3 SENDTIME
-			+ PROCESSED_F+		":%10s "     // 5 PROCESSED
-			+ AMOUNT_F +		"%-10.2f ",  // 6 AMOUNT
+			+ SENDTIME_F+		":%-8s "	     // 3 SENDTIME
+			+ PROCESSED_F+		":%-10s "     // 5 PROCESSED
+			+ AMOUNT_F +		":%-10.2f ",  // 6 AMOUNT
 
 			record.ID,			    // 0 ID
 			record.SENDER,			    // 1 SENDER

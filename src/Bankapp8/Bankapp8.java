@@ -5,6 +5,11 @@ import SQL.SQLMessageRecord;
 import SQL.SQLProfileRecord;
 import SQL.SQLTransactionRecord;
 import SQL.SQLDatabase;
+import SQL.SQLDatabase;
+import SQL.SQLMessageRecord;
+import SQL.SQLProfileRecord;
+import SQL.SQLTransactionRecord;
+import SQL.Utils;
 import SQL.Utils;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -72,8 +77,6 @@ public class Bankapp8 {
     }
     
 
-
-    
     public void main(String[] args) 
     {
 	
@@ -97,20 +100,24 @@ public class Bankapp8 {
 		{
 		    msg = "  00 quit\n"
 			+ "  02 log out user "+this.loggedInUser.getUserName() + "\n"
-			+ "  12 create transaction, \n"
-			+ "  21 transactions credits, \n"
-			+ "  22 transaction debits, \n"
-			+ "  14 create account\n"
-			+ "  15 list account\n"
-			+ "  16 find account\n"
-			+ "  17 verify login/password\n"
-			+ " 90 create tables\n";
+			+ "  12 create a transaction, \n"
+			+ "  21 view debit transactions from ID "+ this.loggedInUser.g_UserId+", \n"
+			+ "  22 view credit transactions to ID "+ this.loggedInUser.g_UserId+", \n";
+		    if (this.loggedInUser.g_Access >= 2)
+			msg = msg  
+			+ "  14 create new account\n"
+			+ "  15 list accounts\n"
+			+ "  16 display an account\n"
+			+ "  17 verify a login/password\n"
+			+ "  31 view transactions for specified ID, \n"
+			+ "  90 create tables\n";
 		}
 		else
 		{
 		    msg = "  00 quit\n"
    		        + "  01 log in\n"
-			+ "  14 create account\n";
+			+ "  14 create account\n"
+			    + " 91 launch newframe gui";
 		}
 			    
 		int which;
@@ -130,6 +137,30 @@ public class Bankapp8 {
 	    }
     
     }
+        public static void launchGUI2()
+    {
+	
+	Thread GR; 
+	GR = new Thread() 
+	{
+	    @Override
+	    public void run() 
+	    {
+		try 
+		{
+		    GUI2.main(null);
+		   
+		    System.out.println("Launching newjframe gui2 app");
+		    Thread.sleep(1);
+		}
+		catch(InterruptedException v)
+		{
+		}
+	    }  
+	};
+
+	GR.start();
+    }
     
     public void handleUserRequest(int which)  
     { 
@@ -142,6 +173,9 @@ public class Bankapp8 {
 	handlechoice:
 	switch (which) 
 	{
+	    case 91:
+		launchGUI2();
+		break;
 	    case 0:
 		this.loggedInUser.setUser(null);
 		System.exit(0);
@@ -166,48 +200,53 @@ public class Bankapp8 {
 	    case 12:
 	    {
 		SQLTransactionRecord transactionRecord = null;
-		transactionRecord = this.askUserForInputForTransaction(this.loggedInUser.g_UserId, scanner);
+		transactionRecord = this.askUserForInputForTransaction(scanner);
 		if (transactionRecord != null)
 		{
 		    sendTransactionWithSQL(transactionRecord);
 		}
 		break;
-		
 	    }
 
-	case 21: 
-		{
-		    String id = this.promptForUsername("Get transactions to which user ID?  ");
-
-		    db = new SQLDatabase();
-		    displayTransactionsFrom(db, id);
-		}
+	    case 21: 
+	    {
+		String id = ""+this.loggedInUser.g_UserId;
+		db = new SQLDatabase();
+		displayTransactionsFrom(db, id);
 		break;
+	    }
 	
 	    case 22: 
-		{
-		    String id = this.promptForUsername("Get transactions from which user ID?  ");
-		    db = new SQLDatabase();
-		    displayTransactionsTo(db, id);
-		}
+	    {
+		// String id = this.promptForUsername("Get transactions from which user ID?  ");
+		String id = ""+this.loggedInUser.g_UserId;
+		db = new SQLDatabase();
+		displayTransactionsTo(db, id);
 		break;	
+	    }
 
+	    case 31: 
+	    {
+		db = new SQLDatabase();
+		displayTransactionsFrom(db);
+		break;
+	    }
 		
 	    case 14:
+	    {
+		SQLProfileRecord profileRecord;		    
+		profileRecord = askUserForInputForProfile(scanner);
+		String result = Bankapp8.saveProfile(profileRecord);
+		String s = "update ok?" + result;
+		System.out.println(s);
+		// if noone is logged in, set our login to
+		// the newly created account.
+		if (this.loggedInUser.isLoggedIn() == false)
 		{
-		    SQLProfileRecord profileRecord;		    
-		    profileRecord = askUserForInputForProfile(scanner);
-		    String result = Bankapp8.saveProfile(profileRecord);
-		    String s = "update ok?" + result;
-		    System.out.println(s);
-		    // if noone is logged in, set our login to
-		    // the newly created account.
-		    if (this.loggedInUser.isLoggedIn() == false)
-		    {
-			this.loggedInUser.setUser(profileRecord);
-		    }
+		    this.loggedInUser.setUser(profileRecord);
 		}
 		break;
+	    }
 		
 	    case 15: 
 		{
@@ -341,7 +380,7 @@ public class Bankapp8 {
 	    transactionRecords = SQLTransactionRecord.convertFromObjects(alist);
 	    String s = SQLTransactionRecord.GetStringFromRecordList(transactionRecords);
 
-	    System.out.println("SQLGetRecordsFromSender returned "+s);
+	    System.out.println("SQLGetRecordsFromSender returned \n"+s);
 	
 	
     }    
@@ -360,7 +399,7 @@ public class Bankapp8 {
 	transactionRecords = SQL.SQLTransactionRecord.convertFromObjects(alist);
 	String s = SQLTransactionRecord.GetStringFromRecordList(transactionRecords);
 	ret.add(s);
-	System.out.println("SQLGetRecordsFromSender returned "+s);
+	System.out.println("SQLGetRecordsFromSender returned \n"+s);
 	return ret;
     }
     
@@ -541,27 +580,44 @@ public class Bankapp8 {
 	return record;
     }
 
-public SQLTransactionRecord askUserForInputForTransaction(int userID, Scanner scanner) {
+public SQLTransactionRecord askUserForInputForTransaction(Scanner scanner) {
 
     	SQLTransactionRecord record;
 	record = new SQLTransactionRecord();
 	Double testval;
-	
-	System.out.println("Is this S (sending) or R (receiving)?");
-	String sendingOrReceiving = scanner.nextLine();
+	String sendingOrReceiving = "S";
+	boolean admin = (this.loggedInUser.g_Access >= 2);
 	String sSender;
 	String sReceiver;
-	String id1 = ""+userID;
+	String id1; 
 	String id2;
+	String sProcessed = "PENDING";
 	
-	if (id1.isEmpty())
+	if (admin)
 	{
-	    System.out.print("The first party's ID:    ");
+	    System.out.println("Is this S (sending) or R (receiving)?");
+	     sendingOrReceiving = scanner.nextLine();
+	    
+	    String p = "PENDING, FAILED, or PROCESSED";
+	    System.out.println("Is it "+p);
+	    sProcessed = scanner.nextLine();
+	    if (p.contains(sProcessed) == false)
+	    {
+		System.out.println("Invalid input - must be "+p);
+		return null;
+	    }
+	     
+	    System.out.printf("%-20s :","From Bank User ID");
 	    id1 = scanner.nextLine();
+	    System.out.printf("%-20s :","To Bank User ID");
+	    id2 = scanner.nextLine();
 	}
-
-	System.out.print("The other party's ID:    ");
-	id2 = scanner.nextLine();
+	else
+	{
+	    id1 = ""+this.loggedInUser.g_UserId;
+	    System.out.printf("%-20s :","To Bank User ID");
+	    id2 = scanner.nextLine();
+	}
 	
 	if (sendingOrReceiving.charAt(0)=='R')
 	{
@@ -574,7 +630,7 @@ public SQLTransactionRecord askUserForInputForTransaction(int userID, Scanner sc
 	    sSender = id1;
 	}
 	
-	
+	// make sure we have a valid sender ID
 	testval =Utils.parseDoubleSafely(sSender); 
 	if ( testval.isNaN())
 	{
@@ -584,20 +640,18 @@ public SQLTransactionRecord askUserForInputForTransaction(int userID, Scanner sc
 	}
 	else record.setSENDER(sSender);
 
-	System.out.print("Recipient ID: ");
-	String sRecipient = scanner.nextLine();
-	
-	testval = Utils.parseDoubleSafely(sRecipient);
+	// make sure we have a valid recipient ID
+	testval = Utils.parseDoubleSafely(sReceiver);
 	if (testval.isNaN())
 	{
-	    String err = String.format("%s is not a numeric value.", sRecipient);
+	    String err = String.format("%s is not a numeric value.", sReceiver);
 	    System.out.println(err);
 	    return null;
 	}
 	
-	else record.setRECEIVER(sRecipient);
+	else record.setRECEIVER(sReceiver);
 
-	System.out.print("Amount:   ");
+	System.out.printf("%-20s :","Amount");
 	String sAmount = scanner.nextLine();
 	testval = Utils.parseDoubleSafely(sAmount); 
 	if (testval.isNaN())
@@ -605,46 +659,65 @@ public SQLTransactionRecord askUserForInputForTransaction(int userID, Scanner sc
 	    String err = String.format("%s is not a numeric value.", sAmount);
 	    System.out.println(err);
 	    return null;
-	} 
-	else record.setAmount(sAmount);
+	}
 	
-	System.out.println("Is it PENDING, FAILED, or PROCESSED");
-	String sProcessed = scanner.nextLine();
+	else 
+	{
+	    record.setAmount(sAmount);
+	}
+	
 	record.setPROCESSED(sProcessed);
+	System.out.printf("Transaction from %s to %s for $%.2f\n",
+		record.getSENDER(),record.getRECEIVER(), record.getAmount());
 	return record;
     }
     
     public SQLProfileRecord askUserForInputForProfile(Scanner scanner) 
     {
 	int id = 0;
+	String sEMAIL;
+	String sPASSWORD;
+	String sFIRSTNAME;
+	String sLASTNAME;
+	String sUSERNAME;
+	String sADDRESS;
+	String sBALANCE;
+	String sACCESS;
+	String sPHONENUMBER;
 	
 	System.out.printf("%20s:",SQLProfileRecord.EMAIL_F);
-	String sEMAIL = scanner.nextLine();
+	sEMAIL = scanner.nextLine();
 
 	System.out.printf("%20s:",SQLProfileRecord.PASSWORD_F);
-	String sPASSWORD = scanner.nextLine();
+	sPASSWORD = scanner.nextLine();
 
 	System.out.printf("%20s:",SQLProfileRecord.FIRSTNAME_F);
-	String sFIRSTNAME = scanner.nextLine();
+	sFIRSTNAME = scanner.nextLine();
 	
 	System.out.printf("%20s:",SQLProfileRecord.LASTNAME_F);
-	String sLASTNAME = scanner.nextLine();
+	sLASTNAME = scanner.nextLine();
 
 	System.out.printf("%20s:",SQLProfileRecord.USERNAME_F);
-	String sUSERNAME = sFIRSTNAME+"_"+sLASTNAME;
+	sUSERNAME = sFIRSTNAME+"_"+sLASTNAME;
 	System.out.println(sUSERNAME);
 	
 	System.out.printf("%20s:",SQLProfileRecord.PHONENUMBER_F);
-	String sPHONENUMBER = scanner.nextLine();
+	sPHONENUMBER = scanner.nextLine();
 
 	System.out.printf("%20s:",SQLProfileRecord.ADDRESS_F);
-	String sADDRESS = scanner.nextLine();
+	sADDRESS = scanner.nextLine();
 
-	System.out.printf("%20s:",SQLProfileRecord.ACCESS_F+" Employee? Y/N" );
-	String sACCESS = scanner.nextLine();
-	
+	if (this.loggedInUser.g_Access > 1)
+	{
+	    System.out.printf("%20s:",SQLProfileRecord.ACCESS_F+" Employee? Y/N" );
+	    sACCESS = scanner.nextLine();
+	}
+	else
+	{
+	    sACCESS = "N";
+	}
 	System.out.printf("%20s:",SQLProfileRecord.BALANCE_F);
-	String sBALANCE = scanner.nextLine();
+	sBALANCE = scanner.nextLine();
 	
 	int iBALANCE;
 	int iACCESS;
@@ -667,17 +740,6 @@ public SQLTransactionRecord askUserForInputForTransaction(int userID, Scanner sc
 			    sPHONENUMBER
 			); 		
 	
-/*int iId, 
-					    String  sUSERNAME, 
-					    String  sPASSWORD, 
-					    String  sFIRSTNAME, 
-					    String  sLASTNAME, 
-					    String  sEMAIL,
-					    String  sADDRESS,
-					    int	    iBALANCE,
-					    int	    iACCESS,
-					    String  sPHONENUMBER 	
-*/	
 	return record;
     }
     
@@ -757,6 +819,10 @@ public SQLTransactionRecord askUserForInputForTransaction(int userID, Scanner sc
 	String result = db.insert(transactionRecord);
 	String s = "post ok?" + result;
 	return result;
+    }
+
+    private void displayTransactionsFrom(SQLDatabase db) {
+	throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }
