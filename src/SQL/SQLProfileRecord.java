@@ -8,7 +8,7 @@ import java.util.ArrayList;
 public class SQLProfileRecord implements SqlRecordInterface
 {
     
-    private static String TABLENAME = "PROFILES";
+    private static final String TABLENAME = "PROFILES";
     
     // member variables, and the information used to record
     // their values in the sql table
@@ -54,19 +54,24 @@ public class SQLProfileRecord implements SqlRecordInterface
     public static final  String LASTNAME_F =	     "LASTNAME";
     private static final String LASTNAME_TYPE =   LASTNAME_F+" VARCHAR(100) NOT NULL";
     
-    private String email = "";
+    private String EMAIL = "";
     public static final  String EMAIL_F =          "EMAIL";
     private static final String EMAIL_TYPE =       EMAIL_F+" VARCHAR(100) NOT NULL";
 
-    private String address = "";
+    private String ADDRESS = "";
     public static final  String ADDRESS_F =    "ADDRESS";
     private static final String ADDRESS_TYPE = ADDRESS_F+" VARCHAR(60) NOT NULL";    
     
-    private int balance = 0;
+    private int BALANCE = 0;
     public static final  String BALANCE_F =    "BALANCE";
     private static final String BALANCE_TYPE = BALANCE_F+" INTEGER NOT NULL";    
     
-    private String phonenumber = "";
+    private int ACCESS = 0;
+    public static final  String ACCESS_F =    "ACCESS";
+    private static final String ACCESS_TYPE = ACCESS_F+" INTEGER NOT NULL";
+
+
+    private String PHONENUMBER = "";
     public static final  String PHONENUMBER_F =    "PHONENUMBER";
     private static final String PHONENUMBER_TYPE = PHONENUMBER_F+" VARCHAR(20)";
 
@@ -88,6 +93,7 @@ public class SQLProfileRecord implements SqlRecordInterface
 	    EMAIL_F+ ", "+
 	    ADDRESS_F + ", " +	
 	    BALANCE_F + ", " +
+	    ACCESS_F + ", " +
 	    PHONENUMBER_F;
 	
 	return fieldnames;
@@ -97,15 +103,16 @@ public class SQLProfileRecord implements SqlRecordInterface
     {
 	String updateFieldList =
 		"UPDATE %s SET "
-		+ USERNAME_F + "='%s', "
-		+ PASSWORD_F + "='%s', "
-		+ FIRSTNAME_F + "='%s', "
-	    	+ LASTNAME_F + "= '%s', "
-		+ EMAIL_F + "='%s', "
-		+ ADDRESS_F + "='%s', "
-		+ BALANCE_F + "='%s', "
-		+ PHONENUMBER_F + " = '%s' " // no comma on the last one
-		+ "WHERE "+ ID_F +"=%d";
+		+ USERNAME_F +	    " ='%s', "
+		+ PASSWORD_F +	    " ='%s', "
+		+ FIRSTNAME_F +	    " ='%s', "
+	    	+ LASTNAME_F +	    " ='%s', "
+		+ EMAIL_F +	    " ='%s', "
+		+ ADDRESS_F +	    " ='%s', "
+		+ BALANCE_F +	    " ='%s', "
+		+ ACCESS +	    " =%d, "
+		+ PHONENUMBER_F +   " ='%s' " // no comma on the last one
+		+ "WHERE "+ ID_F +  "=%d";
 	
 	return updateFieldList;
     }
@@ -122,8 +129,9 @@ public class SQLProfileRecord implements SqlRecordInterface
 	String sEMAIL = results.getString(EMAIL_F);
 	String sADDRESS = results.getString(ADDRESS_F);
 	String sBALANCE = results.getString(BALANCE_F);
+	String sACCESS = results.getString(PHONENUMBER_F);
 	String sPHONENUMBER = results.getString(PHONENUMBER_F); 
-	
+	int iACCESS = Integer.parseInt(sACCESS);
 	int iBALANCE = Integer.parseInt(sBALANCE);
 	
 	record = create_FromParameters(
@@ -135,6 +143,7 @@ public class SQLProfileRecord implements SqlRecordInterface
 			    sEMAIL,
 			    sADDRESS,
 			    iBALANCE,
+			    iACCESS,
 			    sPHONENUMBER  
 	);
 	
@@ -168,15 +177,16 @@ public class SQLProfileRecord implements SqlRecordInterface
     }
     
     public static SQLProfileRecord create_FromParameters(
-					    int iId, 
-					    String sUSERNAME, 
-					    String sPASSWORD, 
-					    String sFIRSTNAME, 
-					    String sLASTNAME, 
-					    String sEMAIL,
-					    String sADDRESS,
-					    int	   iBALANCE,
-					    String sPHONENUMBER 
+					    int	    iId, 
+					    String  sUSERNAME, 
+					    String  sPASSWORD, 
+					    String  sFIRSTNAME, 
+					    String  sLASTNAME, 
+					    String  sEMAIL,
+					    String  sADDRESS,
+					    int	    iBALANCE,
+					    int	    iACCESS,
+					    String  sPHONENUMBER 
 					   ) 
     {
 	SQLProfileRecord me = new SQLProfileRecord();
@@ -185,10 +195,11 @@ public class SQLProfileRecord implements SqlRecordInterface
 	me.password  = sPASSWORD;
 	me.firstname = sFIRSTNAME;
 	me.lastname = sLASTNAME;
-	me.email = sEMAIL;
-	me.address = sADDRESS;
-	me.balance = iBALANCE;
-	me.phonenumber = sPHONENUMBER;
+	me.EMAIL = sEMAIL;
+	me.ADDRESS = sADDRESS;
+	me.BALANCE = iBALANCE;
+	me.ACCESS = iACCESS;
+	me.PHONENUMBER = sPHONENUMBER;
 	
 	return me;
     }
@@ -201,8 +212,7 @@ public class SQLProfileRecord implements SqlRecordInterface
     }
 
     public static String toString(SQLProfileRecord me) {
-	String s = String.format(
-		  ID_F		+ ":%-10d "
+	String s = String.format(ID_F		+ ":%-10d "
 		+ USERNAME_F    + ":%-20s "
 		+ PASSWORD_F    + ":%-20s "
 		+ FIRSTNAME_F   + ":%-20s "
@@ -210,6 +220,7 @@ public class SQLProfileRecord implements SqlRecordInterface
 		+ EMAIL_F       + ":%-12s "
 		+ ADDRESS_F     + ":%-30s "
 		+ BALANCE_F	+ ":%-20.2f "
+		+ ACCESS_F	+ ":%-2d "
 		+ PHONENUMBER_F + ":%-20s "
 		,
 		me.ID,
@@ -217,17 +228,21 @@ public class SQLProfileRecord implements SqlRecordInterface
 		me.password,
 		me.firstname,
 		me.lastname,
-		me.email,
-		me.address,
-		me.balance / 100.00,
-    		me.phonenumber
+		me.EMAIL,
+		me.ADDRESS,
+		me.BALANCE / 100.00,
+		me.ACCESS,
+    		me.PHONENUMBER
 		);
 	return s;
 
     }
     
     
-        
+    static String string = " '%s' ";
+    static String integer = " %d ";
+    static String comma = ",";
+
     @Override
     public String GetSqlInsert()
     {
@@ -236,14 +251,15 @@ public class SQLProfileRecord implements SqlRecordInterface
 	
 	String s = String.format("INSERT INTO %s (%s) VALUES "+
 		"("
-		+ " '%s' , " // username
-		+ " '%s' , " // password
-		+ " '%s' , " // firstname
-		+ " '%s' , " // lastname
-		+ " '%s' , " // email
-		+ " '%s' , " // address
-		+ " %d , " // balance
-		+ " '%s'   " // NO COMMA ON LAST ONE 
+		+ string  + comma	// username
+		+ string  + comma	// password
+		+ string  + comma	// firstname
+		+ string  + comma	// lastname
+		+ string  + comma	// email
+		+ string  + comma	// address
+		+ integer + comma	// balance
+		+ integer  +comma	// access
+		+ string		// phonenumber NO COMMA ON LAST ONE 
 		+ ")",
 		    getTableName(), 
 		    getFieldNames(),
@@ -251,12 +267,13 @@ public class SQLProfileRecord implements SqlRecordInterface
 		    this.password,
 		    this.firstname,
 		    this.lastname,
-		    this.email,
-		    this.address,
-		    this.balance,
-		    this.phonenumber
+		    this.EMAIL,
+		    this.ADDRESS,
+		    this.BALANCE,
+		    this.ACCESS,
+		    this.PHONENUMBER
 		);
-	System.err.println("SQL:"+s);
+	// System.err.println("SQL:"+s);
 	return s;
     }
 
@@ -266,12 +283,12 @@ public class SQLProfileRecord implements SqlRecordInterface
 
     
     // this needs to be improved
-    
+
     
     public static String getCreateCommand() 
     {
 	String newlinetab = "\n\t";
-	String comma = ",";
+	
 	
 	String s = "CREATE TABLE "+getTableName() + "(" + newlinetab + 
 		    ID_TYPE + newlinetab +
@@ -284,6 +301,7 @@ public class SQLProfileRecord implements SqlRecordInterface
 		EMAIL_TYPE	    + comma + newlinetab +
 		ADDRESS_TYPE	    + comma + newlinetab +
 		BALANCE_TYPE	    + comma + newlinetab +
+		ACCESS_TYPE	    + comma + newlinetab + 
 		PHONENUMBER_TYPE    + newlinetab + // no comma on last field
 	    ")";
 	return s;
@@ -322,36 +340,36 @@ public class SQLProfileRecord implements SqlRecordInterface
     }
 
     public String getEMAIL() {
-	return email;
+	return EMAIL;
     }
 
     public void setEMAIL(String EMAIL) {
-	this.email = EMAIL;
+	this.EMAIL = EMAIL;
     }
     
     public String getADDRESS() {
-	return address;
+	return ADDRESS;
     }
 
     public void setADDRESS(String ADDRESS) {
-	this.address = ADDRESS;
+	this.ADDRESS = ADDRESS;
     }
     
     public String getBALANCE() {
-	String s = String.format("%.2f",balance / 100.0);
-	return phonenumber;
+	String s = String.format("%.2f",BALANCE / 100.0);
+	return PHONENUMBER;
     }
 
     public void setBALANCE(String BALANCE) {
-	this.balance = (int) ( Double.parseDouble(BALANCE) * 100.0);
+	this.BALANCE = (int) ( Double.parseDouble(BALANCE) * 100.0);
     }
 
     public String getPHONENUMBER() {
-	return phonenumber;
+	return PHONENUMBER;
     }
 
     public void setPHONENUMBER(String PHONENUMBER) {
-	this.phonenumber = PHONENUMBER;
+	this.PHONENUMBER = PHONENUMBER;
     }
 
 
@@ -365,12 +383,25 @@ public class SQLProfileRecord implements SqlRecordInterface
 		    this.password,
 		    this.firstname,
 		    this.lastname,
-		    this.email,
-		    this.balance,
-		    this.phonenumber,
+		    this.EMAIL,
+		    this.BALANCE,
+		    this.ACCESS,
+		    this.PHONENUMBER,
 		    RecordID
 		);
-	System.err.println("UPDATE Set SQL:\n"+s);
+	// System.err.println("UPDATE Set SQL:\n"+s);
 	return s;
+    }
+    @Override
+    public String tableName() {
+	return TABLENAME;
+    }
+
+    public int getAccess() {
+	return ACCESS;
+    }
+
+    public void setAccess(int access) {
+	this.ACCESS = access;
     }
 }

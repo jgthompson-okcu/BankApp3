@@ -1,17 +1,17 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * This module serves as a launchpad for the bankapp.
+ * It is placed outside of BankApp.java so it can decide
+ * whether to launch with the command line version or a GUI
+ * version.
  */
+
 package Bankapp8;
 
-/**
- *
- * @author Jeff
- */
+
 public class Launcher {
     public static void main(String[] args)
     {
-	Bankapp2.main2(args);
+	Bankapp8.launch(args);
     }
     
 }

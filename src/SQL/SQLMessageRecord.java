@@ -20,7 +20,7 @@ public class SQLMessageRecord implements SqlRecordInterface
     // getFieldNames 
     // getUpdateFieldList
     // create_FromParameters
-    // create_fromMessageRecord(ResultSet results)
+    // create_fromResultSet(ResultSet results)
     // toString
     // GetSqlInsert
     // GetSqlReplace  (actually we don't have a replace method yet.  could
@@ -79,7 +79,7 @@ public class SQLMessageRecord implements SqlRecordInterface
             return fieldnames;
     }
     
-    static public SQLMessageRecord create_FromMessageRecord(ResultSet results) throws SQLException 
+    static public SQLMessageRecord create_FromResultSet(ResultSet results) throws SQLException 
     {
 	SQLMessageRecord record;
 
@@ -310,5 +310,9 @@ public class SQLMessageRecord implements SqlRecordInterface
 		return s;
 
     }
-    
+       @Override
+    public String tableName() {
+	return TABLENAME;
+    }
+ 
 }

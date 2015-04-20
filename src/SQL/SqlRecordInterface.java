@@ -13,6 +13,7 @@ public interface SqlRecordInterface extends Serializable {
     @Override
     String toString();
     String getFieldNames();
+    String tableName();
 
 
 

@@ -44,13 +44,13 @@ public class SQLDatabase
     /**
      * Inserts a profile record into the profiles table.
      * A: creates sql connection
-     * B: inserts  the profilerecord from the parameter into the profile table by calling oursql.insertProfile(record)
+     * B: inserts  the profilerecord from the parameter into the profile table by calling oursql.insert(profilerecord)
      * C: shuts down the sql connection
      *
      * @param record
      * @return
      */
-    public String insertProfile(SQLProfileRecord record) 
+    public String insert(SQLProfileRecord record) 
     {
 	SqlClient ourSQL;
 	ourSQL = new SqlClient();
@@ -58,30 +58,50 @@ public class SQLDatabase
 	if (sErr.length() == 0)
 	{
 	    String table = SQLMessageRecord.getTableName();
-	    ourSQL.insertProfile(record);
+	    ourSQL.insert(record);
 	    ourSQL.shutdown();
 	}
 	return sErr;
     }
-
-
+    /**
+     * Inserts a transaction record into the profiles table.
+     * A: creates sql connection
+     * B: inserts  the transaction from the parameter into the profile table by calling oursql.insert(transactionrecord)
+     * C: shuts down the sql connection
+     *
+     * @param record
+     * @return
+     */
+    public String insert(SQLTransactionRecord record) {
+	SqlClient ourSQL;
+	ourSQL = new SqlClient();
+	String sErr = ourSQL.createConnection();
+	if (sErr.length() == 0)
+	{
+	    String table = SQLTransactionRecord.getTableName();
+	    ourSQL.insert(record);
+	    ourSQL.shutdown();
+	}
+	return sErr;
+    }
+    
     
     /**
      * inserts a Message record into the Messages table
      * A Creates sql connection
-     * B Inserts  the message record from the parameter into the profile table by calling ourSQL.insertMessage
+     * B Inserts  the message record from the parameter into the profile table by calling ourSQL.insert(messagerecord)
      * C shuts down the sql connection
      * @param record
      * @return
      */
-    public String insertMessage(SQLMessageRecord record) {
+    public String insert(SQLMessageRecord record) {
 	SqlClient ourSQL;
 	ourSQL = new SqlClient();
 	String sErr = ourSQL.createConnection();
 	if (sErr.length() == 0)
 	{
 	    String table = SQLMessageRecord.getTableName();
-	    ourSQL.insertMessage(record);
+	    ourSQL.insert(record);
 	    ourSQL.shutdown();
 	}
 	return sErr;
@@ -144,33 +164,102 @@ public class SQLDatabase
 
 	}
 	return records;
-    }    
+    }
+    
+//    /**
+//     * gets transaction records from the messages table 
+//     * that match 'WHERE SENDER LIKE' sTo parameter.
+//     *
+//     * creates connection
+//     * runs ourSQL.selectMessagesAsList()
+//     * shuts down connection
+//     * @param sFrom
+//     * @param limit
+//     * @return ArrayList of records (must be cast)
+//     */
+//
+//    public ArrayList<Object> getTransactionsFrom(String sFrom, int limit) 
+//    {
+//	ArrayList<Object> records = new ArrayList();
+//	SqlClient ourSQL = new SqlClient();
+//	String sErr = ourSQL.createConnection();
+//	String table = SQLTransactionRecord.getTableName();
+//	
+//	if (sErr.length() == 0)
+//	{
+//	    String where = String.format("WHERE SENDER LIKE '%%%s%%'",sFrom);
+//	    
+//	    records = ourSQL.selectTransactionsAsList(
+//		    table,
+//		    where, 
+//		    limit );
+//	    
+//	    ourSQL.shutdown();
+//	}
+//	return records;	
+//    }
+    
+    /**
+     * gets transaction records from the messages table 
+     * that match 'WHERE RECEIVER LIKE' sTo parameter.
+     *
+     * creates connection
+     * runs ourSQL.selectMessagesAsList()
+     * shuts down connection
+     * @param field
+     * @param sTo
+     * @param limit
+     * @return ArrayList of records (must be cast)
+     */
+    
+    public ArrayList<Object> getTransactions(String field, String sTo, int limit) 
+    {
+	ArrayList<Object> records = new ArrayList();
+	SqlClient ourSQL = new SqlClient();
+	String sErr = ourSQL.createConnection();
+	String table = SQLTransactionRecord.getTableName();
+	if (sErr.length() == 0)
+	{
+	    String where = "";
+	    if (field != null && sTo != null && field.isEmpty()==false && sTo.isEmpty() == false)
+		where = String.format("WHERE %s LIKE '%%%s%%' ",field, sTo);
 
+	    records = ourSQL.selectTransactionsAsList(
+		    table,
+		    where, 
+		    limit);
+	    
+	    ourSQL.shutdown();
+
+	}
+	return records;
+    }    
 
     
     /**
      *
-     * gets up to limit profile records from the profile table 'WHERE EMAIL LIKE' sId parameter.
+     * gets up to limit profile records from the profile table 'WHERE EMAIL LIKE OR USERNAME LIKE' sId parameter.
      * A: creates connection
      * B: runs ourSQL.selectProfilesAsList()
      * C: shuts down connection
      * @param sID
      * @param limit
-     * @return arraylist of records
+     * @return ArrayList of records
      */
     public ArrayList<Object> getProfiles(String sID, int limit) 
     {
+	String field1 = "USERNAME";
+	String field2 = "EMAIL";
 	String tablename = SQLProfileRecord.getTableName();
 	System.out.println("Table:"+tablename);
 	ArrayList<Object> records = new ArrayList();
-	SqlClient ourSQL = new SqlClient();
-	boolean bok;
-	String sErr = ourSQL.createConnection();
+	SqlClient ourSQL = new SqlClient();	String sErr = ourSQL.createConnection();
 	if (sErr.length() == 0)
 	{   String where = "";
 	    if (sID.length()>0)
 	    {
-		where = String.format("WHERE EMAIL LIKE '%%%s%%'",sID);
+		where = String.format("WHERE %s LIKE '%%%s%%'",field1, sID);
+		where += String.format("OR %s LIKE '%%%s%%'",field2, sID);
 	    }
 	    records = ourSQL.selectProfilesAsList(tablename,where, limit);
 	    ourSQL.shutdown();
@@ -206,6 +295,7 @@ public class SQLDatabase
 	return sErr;
     }
 
+
     /**
      * inserts a Transaction record into the Transaction table
      * A Creates sql connection
@@ -213,18 +303,18 @@ public class SQLDatabase
      * C shuts down the sql connection
      * @param record
      * @return
-     */
-    public String insertTransaction(SQLTransactionRecord record) {
+     
+    public String insert(SQLTransactionRecord record) {
 	SqlClient ourSQL;
 	ourSQL = new SqlClient();
 	String sErr = ourSQL.createConnection();
 	if (sErr.length() == 0)
 	{
 	    String table = SQLTransactionRecord.getTableName();
-	    ourSQL.insertTransaction(record);
+	    ourSQL.insert(record);
 	    ourSQL.shutdown();
 	}
 	return sErr;
-    }
+    }*/
     
 }

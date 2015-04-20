@@ -19,33 +19,37 @@ public class SQLTransactionRecord implements SqlRecordInterface
     // getFieldNames 
     // getUpdateFieldList
     // create_FromParameters
-    // create_fromMessageRecord(ResultSet results)
+    // create_fromResultSet(ResultSet results)
     // toString
     // GetSqlInsert
     // GetSqlReplace  (actually we don't have a replace method yet.  could
     //                 be done like the one in the SQLProfileRecord class.
     
     private static final String TABLENAME = "TRANSACTIONS";
-    
+
     private int                   ID = 0;
     private static final String   ID_TYPE = "ID INTEGER NOT NULL";
     private static final String   ID_F = "ID";
 
-    private String                sender = "DEFAULTSENDER";    
+    private String                SENDER = "DEFAULTSENDER";    
     public static final String    SENDER_F = "SENDER";
     private static final String   SENDER_TYPE = SENDER_F + " VARCHAR(20) NOT NULL";    
 
-    private String                receiver = "DEFAULTRECIEVER";  
+    private String                RECEIVER = "DEFAULTRECIEVER";  
     public static final String    RECEIVER_F = "RECEIVER";
     private static final String   RECEIVER_TYPE = RECEIVER_F + " VARCHAR(20) NOT NULL";
 
-    private long                  sendtime = 0;         // timestamp
+    private long                  SENDTIME = 0;         // timestamp
     public static final String    SENDTIME_F = "SENDTIME"; 
     private static final String   SENDTIME_TYPE = SENDTIME_F+" DECIMAL(15) NOT NULL"; 
-
-    private double                amount = 1;   
+    
+    private String                PROCESSED = "PENDING";    
+    public static final String    PROCESSED_F = "PROCESSED";
+    private static final String   PROCESSED_TYPE = PROCESSED_F + " VARCHAR(10) NOT NULL"; 
+    
+    private double		  AMOUNT = 1;   
     public static final String    AMOUNT_F = "AMOUNT";  
-    private static final String   AMOUNT_TYPE = AMOUNT_F+" DECIMAL(5) NOT NULL";
+    private static final String   AMOUNT_TYPE = AMOUNT_F+" INTEGER NOT NULL";
 
     public static final String getTableName() 
     {
@@ -59,14 +63,15 @@ public class SQLTransactionRecord implements SqlRecordInterface
     {
             String fieldnames = 
             
-            SENDER_F   +   ", " + 
-            RECEIVER_F + ", " + 
-            SENDTIME_F + ", " +  
-	    AMOUNT_F   + " ";   // last one gets no comma
+            SENDER_F   +	", " + 
+            RECEIVER_F +	", " + 
+            SENDTIME_F +	", " +  
+	    PROCESSED_F +	", " +  
+	    AMOUNT_F   +	" ";   // last one gets no comma
             return fieldnames;
     }
     
-    static public SQLTransactionRecord create_FromMessageRecord(ResultSet results) throws SQLException 
+    static public SQLTransactionRecord create_FromResultSet(ResultSet results) throws SQLException 
     {
 	SQLTransactionRecord record;
 
@@ -74,13 +79,16 @@ public class SQLTransactionRecord implements SqlRecordInterface
 	String sSender =    results.getString(SENDER_F);
 	String sReceiver =  results.getString(RECEIVER_F);
 	long lSendtime =    results.getLong(SENDTIME_F);
+	String sProcessed = results.getString(PROCESSED_F);
 	long lAmount =	    results.getLong(AMOUNT_F);
+	
 	
 	record = create_FromParameters(
 		iId,
 		sSender,
 		sReceiver,
 		lSendtime,
+		sProcessed,
 		lAmount
 	    );
 	
@@ -113,17 +121,19 @@ public class SQLTransactionRecord implements SqlRecordInterface
 		    String sSender,
 		    String sReceiver,
 		    long lSendtime,
-		    long lAmount
+		    String sProcessed,
+		    double dAmount
 	    )
 	    
     {
 	SQLTransactionRecord thisRecord = new SQLTransactionRecord();
 	
 	thisRecord.ID = iId;
-	thisRecord.sender = sSender;
-	thisRecord.receiver = sReceiver;
-	thisRecord.sendtime = lSendtime;
-	thisRecord.amount = lAmount;
+	thisRecord.SENDER = sSender;
+	thisRecord.RECEIVER = sReceiver;
+	thisRecord.SENDTIME = lSendtime;
+	thisRecord.PROCESSED = sProcessed;
+	thisRecord.AMOUNT = dAmount;
 	return thisRecord;
 	
     }
@@ -136,18 +146,22 @@ public class SQLTransactionRecord implements SqlRecordInterface
     }
 
     public static String toString(SQLTransactionRecord record) {
-	String s = String.format(
-                  ID_F +         ":%-5d "
-		+ SENDER_F+     ":%-10s "
-		+ RECEIVER_F+   ":%-10s "
-		+ SENDTIME_F+   ":%8s " 
-		+ AMOUNT_F +    "%-10d",
-		record.ID,
-		record.sender,
-		record.receiver,
-		record.getSENDTIMESTRING(),
-		record.amount
-		);
+	String s;
+	    s = String.format(
+			  ID_F +		":%-5d "     // 0 ID
+			+ SENDER_F+		":%-10s "    // 1 SENDER
+			+ RECEIVER_F+		":%-10s "    // 2 RECEIVER
+			+ SENDTIME_F+		":%8s "	     // 3 SENDTIME
+			+ PROCESSED_F+		":%10s "     // 5 PROCESSED
+			+ AMOUNT_F +		"%-10.2f ",  // 6 AMOUNT
+
+			record.ID,			    // 0 ID
+			record.SENDER,			    // 1 SENDER
+			record.RECEIVER,		    // 2 RECEIVER
+			record.getSENDTIMESTRING(),	    // 3 SENDTIME
+			record.PROCESSED,		    // 5 PROCESSED
+			(double) (record.AMOUNT / 100.00)   // 6 AMOUNT
+	);
 	return s;
 
     }
@@ -156,21 +170,24 @@ public class SQLTransactionRecord implements SqlRecordInterface
     public String GetSqlInsert()
     {
 	
-	String s = String.format("INSERT INTO %s (%s) VALUES "+
+	String s;
+	this.setSENDTIME();
+	s = String.format("INSERT INTO %s (%s) VALUES "+
 		"("
-		+ "'%s', "
-		+ "'%s', "
-		+ " %d , "
-		+ " %.0f  "  // last one no comma // we have long / double confusion
+		+ "'%s', " // strings need single quotes
+		+ "'%s', " // strings need single quotes
+		+ " %d , " // sendtime
+		+ "'%s', "  // strings need single quotes
+		+ " %d  "  // last one no comma // we have long / double confusion
 		+ ")",
-		    getTableName(), 
-		    this.getFieldNames(),
-		    this.sender,	//s sender
-		    this.receiver,	//s receiver
-		    this.sendtime,	//d sendtime
-		    this.amount		//d amount   // last one no comma
-		
-		);
+		getTableName(),
+		this.getFieldNames(),
+		this.SENDER,	//s SENDER
+		this.RECEIVER,	//s RECEIVER
+		this.SENDTIME,	//d SENDTIME
+		this.PROCESSED,	//s "PROCESSED, PENDING or FAILED"
+		(int) (100 * this.AMOUNT)	//d AMOUNT   // last one no comma
+	);
 	// System.err.println("SQL:"+s);
 	return s;
     }
@@ -180,27 +197,27 @@ public class SQLTransactionRecord implements SqlRecordInterface
     }
 
     public String getSENDER() {
-	return sender;
+	return SENDER;
     }
 
     public void setSENDER(String SENDER) {
-	this.sender = SENDER;
+	this.SENDER = SENDER;
     }
 
     public String getRECEIVER() {
-	return receiver;
+	return RECEIVER;
     }
 
     public void setRECEIVER(String RECEIVER) {
-	this.receiver = RECEIVER;
+	this.RECEIVER = RECEIVER;
     }
 
     public long getSENDTIME() {
-	return sendtime;
+	return SENDTIME;
     }
 
     public void setSENDTIME(long SENDTIME) {
-	this.sendtime = SENDTIME;
+	this.SENDTIME = SENDTIME;
     }
     
     public String getSENDTIMESTRING()
@@ -232,20 +249,51 @@ public class SQLTransactionRecord implements SqlRecordInterface
 		    ID_TYPE + newlinetab +
 		    "PRIMARY KEY GENERATED ALWAYS AS IDENTITY " + newlinetab +
 		    "(START WITH 1, INCREMENT BY 1),"  + newlinetab +
-		    SENDER_TYPE   + comma + newlinetab + 
-		    RECEIVER_TYPE + comma + newlinetab +
-		    SENDTIME_TYPE + comma + newlinetab +
-		    AMOUNT_TYPE +	    newlinetab + // last one no comma
+		    SENDER_TYPE		+ comma + newlinetab + 
+		    RECEIVER_TYPE	+ comma + newlinetab +
+		    SENDTIME_TYPE	+ comma + newlinetab +
+		    PROCESSED_TYPE	+ comma + newlinetab +
+		    AMOUNT_TYPE		+	  newlinetab + // last one no comma
 		    ")";
 	return s;
     }
 
     public double getAmount() {
-	return amount;
+	return Double.parseDouble(String.format("%.2f",this.AMOUNT));
     }
 
     public void setAmount(double amount) {
-	this.amount = amount;
+	this.AMOUNT = Double.parseDouble(String.format("%.2f",amount));
     }
+    
+    public void setAmount(String amount) 
+    {
+    }
+
+    public String getPROCESSED() {
+	validProcessingType(PROCESSED);
+	return PROCESSED;
+    }
+    
+    private static final String processing_modes = "PENDING FAILED POSTED";
+    public static boolean validProcessingType(String s)
+    {
+	boolean ok = (processing_modes.contains(s));
+	if (ok)
+	    return ok;
+	String err = String.format("Error - PROCESSED value (%s) invalid - must be %s", s, processing_modes);
+	System.err.println(err);
+	throw new RuntimeException (err);
+    }
+
+    public void setPROCESSED(String PROCESSED) {
+	validProcessingType(PROCESSED);
+	this.PROCESSED = PROCESSED;
+    }
+    @Override
+    public String tableName() {
+	return TABLENAME;
+    }
+
     
 }

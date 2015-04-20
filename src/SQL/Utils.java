@@ -1,8 +1,6 @@
 package SQL;
 
 
-import SQL.SqlClient;
-import SQL.SQLMessageRecord;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -24,6 +22,17 @@ public class Utils
     }
     
 
+    public static long parseLongSafely(String s) {
+        long r;
+        try {
+            r = Long.parseLong(s);
+        } catch (Exception ex) {
+            System.err.printf("Could not convert '%s' to numeric value\n", s);
+            r = 0;
+        }
+        return r;
+    }
+    
 public static Date convertLocalTimestamp(long millis)
 {
     TimeZone tz = TimeZone.getDefault();
@@ -90,8 +99,21 @@ public static Date convertLocalTimestamp(long millis)
 	{
 	    SQLMessageRecord record;
 	    record = Utils.makeTestRecord("SERVERTEST","SERVERTESTRESULT","SERVER LAUNCH","SERVER LAUNCH OK");
-	    sErr = chatSQL.insertMessage(record);
+	    sErr = chatSQL.insert(record);
 	}
 	return sErr;
+    }
+    
+    public static Double parseDoubleSafely(String s) {
+        Double r;
+        try 
+	{
+            r = Double.parseDouble(s);
+        }
+	catch (Exception ex) 
+	{
+            r = Double.NaN;
+        }
+        return r;
     }
 }

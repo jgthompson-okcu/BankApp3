@@ -73,7 +73,7 @@ public class SqlClient implements SqlClientInterface{
     }
     
     @Override
-    public String insertMessage(SQLMessageRecord record)
+    public String insert(SQLMessageRecord record)
     {
         if (conn == null)
 	{
@@ -101,8 +101,35 @@ public class SqlClient implements SqlClientInterface{
 	return "";
     }
     
+    @Override
+    public String insert(SQLTransactionRecord record)
+    {
+        if (conn == null)
+	{
+	    System.out.println("No connection");
+	    return "No connection";
+	}
+	try
+        {
+            stmt = conn.createStatement();
+
+	    String s = record.GetSqlInsert();
+
+            System.err.println("SQL QUERY:" + s);
+            stmt.execute( s );
+            stmt.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+	    String sError = sqlExcept.getMessage();
+            sqlExcept.printStackTrace(System.out);
+	    return sError;
+        }
+	return "";
+    }
+    
 @Override
-    public String insertProfile(SQLProfileRecord record)
+    public String insert(SQLProfileRecord record)
     {
         if (conn == null)
 	{
@@ -128,7 +155,60 @@ public class SqlClient implements SqlClientInterface{
 	return "";
     }
 
-    // @Override
+    @Override
+    public ArrayList<Object> selectTransactionsAsList(String tableName, String where, int limit) 
+    {
+	// where clause: optional
+	// must be valid SQL
+	//
+	// limit: set the number of records to return.  0 for all that
+	// match
+	
+	ArrayList<Object> aList = new ArrayList<>();
+        try
+        {
+            stmt = conn.createStatement();
+	    
+	    if (limit>0)
+		stmt.setMaxRows(limit);
+	    
+	    String selectStatement = "select * from " + tableName;
+	    if (where.length() > 0)
+	    {
+		selectStatement += " " + where;
+	    }
+	    
+	    System.err.println("SQL QUERY: "+selectStatement);
+	    
+	    try	    (
+			ResultSet results = 
+			    stmt.executeQuery(selectStatement)
+		    ) 
+	    {
+		ResultSetMetaData rsmd = results.getMetaData();
+		// int numberCols = rsmd.getColumnCount();
+
+		while(results.next())
+		{
+		    SQLTransactionRecord record = SQLTransactionRecord.create_FromResultSet(results);
+		    aList.add(record);
+			    
+		}
+	    }
+            stmt.close();
+	    
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace(System.out);
+	    ArrayList<Object> errList = new ArrayList<>();
+	    errList.add(sqlExcept.getMessage());
+	    return errList;
+        }
+	
+	return aList;
+    }
+    
     @Override
     public ArrayList<Object> selectMessagesAsList(String tableName, String where, int limit)
     {
@@ -164,7 +244,7 @@ public class SqlClient implements SqlClientInterface{
 
 		while(results.next())
 		{
-		    SQLMessageRecord record = SQLMessageRecord.create_FromMessageRecord(results);
+		    SQLMessageRecord record = SQLMessageRecord.create_FromResultSet(results);
 		    aList.add(record);
 			    
 		}
@@ -343,30 +423,4 @@ public class SqlClient implements SqlClientInterface{
 	return "";
     }
 
-    String insertTransaction(SQLTransactionRecord record) {
-        if (conn == null)
-	{
-	    System.out.println("No connection");
-	    return "No connection";
-	}
-	try
-        {
-	    record.setSENDTIME();
-
-            stmt = conn.createStatement();
-
-	    String s = record.GetSqlInsert();
-	    System.err.println("SQL: "+s);
-
-            stmt.execute( s );
-            stmt.close();
-        }
-        catch (SQLException sqlExcept)
-        {
-	    String sError = sqlExcept.getMessage();
-            sqlExcept.printStackTrace(System.out);
-	    return sError;
-        }
-	return "";
-    }
 }
